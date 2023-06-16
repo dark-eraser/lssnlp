@@ -21,6 +21,9 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
 import json
+import numpy as np
+from scipy.sparse import lil_matrix
+from scipy.cluster.hierarchy import linkage, dendrogram
 from tqdm import tqdm
 
 # Download necessary resources from NLTK
@@ -106,48 +109,16 @@ with open("articles_dump.json", "r", encoding="utf8") as f:
 #     print('------------------------------------')
 
 # %%
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+def calculate_jaccard_similarity(category1_articles, category2_articles):
+    category1_set = set(category1_articles)
+    category2_set = set(category2_articles)
+    
+    intersection = len(category1_set.intersection(category2_set))
+    union = len(category1_set) + len(category2_set) - intersection
+    
+    jaccard_similarity = intersection / union
+    return jaccard_similarity
 
-# Convert the article titles into a list
-all_articles = [article["title"] for article in articles]
-
-# Initialize the TF-IDF vectorizer
-vectorizer = TfidfVectorizer()
-
-# Fit and transform the article titles into a document-term matrix
-dtm = vectorizer.fit_transform(all_articles)
-
-# Compute the cosine similarity matrix
-
-
-
-
-# %%
-cosine_similarity_matrix = cosine_similarity(dtm)
-
-# Iterate over the category pairs and calculate the cosine similarity
-for i, category1 in tqdm(enumerate(categories)):
-    for j, category2 in enumerate(categories):
-        if i == j:
-            similarity_matrix[i, j] = 1.0  # Similarity between the same category is 1.0
-        elif i < j:
-            category1_articles = category_articles[category1]
-            category2_articles = category_articles[category2]
-            
-            # Get the indices of the articles in the document-term matrix
-            category1_indices = [all_articles.index(article) for article in category1_articles]
-            category2_indices = [all_articles.index(article) for article in category2_articles]
-            
-            # Extract the corresponding rows from the document-term matrix
-            category1_dtm = dtm[category1_indices]
-            category2_dtm = dtm[category2_indices]
-            
-            # Calculate the cosine similarity between the categories
-            cosine_similarity_score = cosine_similarity(category1_dtm, category2_dtm)
-            
-            similarity_matrix[i, j] = cosine_similarity_score
-            similarity_matrix[j, i] = cosine_similarity_score
 
 # %%
 
@@ -175,7 +146,7 @@ category_articles.__len__()
 
 # %%
 category_articles_filtered = {
-    category: articles for category, articles in category_articles.items() if len(articles) >= 300}
+    category: articles for category, articles in category_articles.items() if len(articles) >= 1}
 category_articles_filtered.__len__()
 
 categories = list(category_articles_filtered.keys())
@@ -186,47 +157,28 @@ categories.__len__()
 
 # %%
 
-# from sklearn.feature_extraction.text import TfidfVectorizer
-# from sklearn.metrics.pairwise import cosine_similarity
+# Compute category similarity incrementally using random projection and sparse matrix
+num_categories = len(categories)
 
-# # Convert the article titles into a list
-# all_articles = [article["title"] for article in articles]
+# Random projection for dimensionality reduction
+similarity_matrix = lil_matrix((num_categories, num_categories), dtype=np.float32)
 
-# # Initialize the TF-IDF vectorizer
-# vectorizer = TfidfVectorizer()
+for i, category1 in tqdm(enumerate(categories), total=num_categories):
+    for j, category2 in enumerate(categories):
+        if i == j:
+            similarity_matrix[i, j] = 1.0  # Similarity between the same category is 1.0
+        elif i < j:
+            category1_articles = category_articles[category1]
+            category2_articles = category_articles[category2]
 
-# # Fit and transform the article titles into a document-term matrix
-# dtm = vectorizer.fit_transform(all_articles)
-
-# # Compute the cosine similarity matrix
-# cosine_similarity_matrix = cosine_similarity(dtm)
-
-# # Iterate over the category pairs and calculate the cosine similarity
-# for i, category1 in tqdm(enumerate(categories)):
-#     for j, category2 in enumerate(categories):
-#         if i == j:
-#             similarity_matrix[i, j] = 1.0  # Similarity between the same category is 1.0
-#         elif i < j:
-#             category1_articles = category_articles[category1]
-#             category2_articles = category_articles[category2]
-            
-#             # Get the indices of the articles in the document-term matrix
-#             category1_indices = [all_articles.index(article) for article in category1_articles]
-#             category2_indices = [all_articles.index(article) for article in category2_articles]
-            
-#             # Extract the corresponding rows from the document-term matrix
-#             category1_dtm = dtm[category1_indices]
-#             category2_dtm = dtm[category2_indices]
-            
-#             # Calculate the cosine similarity between the categories
-#             cosine_similarity_score = cosine_similarity(category1_dtm, category2_dtm)
-            
-#             similarity_matrix[i, j] = cosine_similarity_score
-#             similarity_matrix[j, i] = cosine_similarity_score
+            jaccard_similarity = calculate_jaccard_similarity(category1_articles, category2_articles)
+c
+            similarity_matrix[i, j] = jaccard_similarity
+            similarity_matrix[j, i] = jaccard_similarity
 
 
-# # Print the similarity matrix
-# print(cosine_similarity_matrix)
+# %%
+np.save('similarity_matrix.npy', similarity_matrix.toarray())
 
 
 # %%
