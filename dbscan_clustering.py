@@ -40,7 +40,7 @@ categories = {item for sublist in categories for item in sublist}
 categories=list(categories)
 
 # %%
-categories[0]
+categories.__len__()
 
 # %%
 # Set the batch size for vectorization and PCA
