@@ -14,41 +14,43 @@
 #     name: python3
 # ---
 
+import json
+import os
+
 # %%
 import re
+
 import nltk
-from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
-import os
-import json
 import numpy as np
+from nltk.corpus import stopwords
+from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.sparse import lil_matrix
-from scipy.cluster.hierarchy import linkage, dendrogram
+from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
 # Download necessary resources from NLTK
-nltk.download('stopwords')
+nltk.download("stopwords")
 
 
 # %%
 def preprocess_text(text):
     # Remove punctuation and special characters
     # print(text)
-    text = re.sub(r'[^\w\s]', '', text)
-    
+    text = re.sub(r"[^\w\s]", "", text)
+
     # Convert to lowercase
     text = text.lower()
-    
+
     # Tokenize the text into words
     tokens = nltk.word_tokenize(text)
-    
+
     # Remove stopwords
-    stop_words = set(stopwords.words('english'))
+    stop_words = set(stopwords.words("english"))
     tokens = [token for token in tokens if token not in stop_words]
-    
+
     # Join the tokens back into a single string
-    processed_text = ' '.join(tokens)
-    
+    processed_text = " ".join(tokens)
+
     return processed_text
 
 
@@ -65,11 +67,11 @@ def preprocess_text(text):
 # for json_file in json_files:
 #     with open(os.path.join(article_dump_folder, json_file), 'r') as file:
 #         article_data = json.load(file)
-        
+
 #         title = article_data['title']
 #         text = article_data['text']
 #         categories = article_data['categories']
-        
+
 #         articles.append({'title': title, 'text': text, 'categories': categories})
 
 # %%
@@ -92,12 +94,10 @@ with open("articles_dump.json", "r", encoding="utf8") as f:
 # tfidf_matrix = vectorizer.fit_transform(preprocessed_texts)
 
 
-
 # %%
 # Get the feature names (words) from the vectorizer
 
 # feature_names = vectorizer.get_feature_names_out()
-
 
 
 # %%
@@ -112,10 +112,10 @@ with open("articles_dump.json", "r", encoding="utf8") as f:
 def calculate_jaccard_similarity(category1_articles, category2_articles):
     category1_set = set(category1_articles)
     category2_set = set(category2_articles)
-    
+
     intersection = len(category1_set.intersection(category2_set))
     union = len(category1_set) + len(category2_set) - intersection
-    
+
     jaccard_similarity = intersection / union
     return jaccard_similarity
 
@@ -126,17 +126,13 @@ def calculate_jaccard_similarity(category1_articles, category2_articles):
 # List of categories and their corresponding articles
 categories = []
 for article in tqdm(articles):
-    categories.extend(article['categories'])
+    categories.extend(article["categories"])
 category_articles = {}
-
-
-
-
 
 
 # %%
 for article in tqdm(articles):
-    for category in (article['categories']):
+    for category in article["categories"]:
         if category not in category_articles:
             category_articles[category] = []
         category_articles[category].append(article["title"])
@@ -146,7 +142,8 @@ category_articles.__len__()
 
 # %%
 category_articles_filtered = {
-    category: articles for category, articles in category_articles.items() if len(articles) >= 1}
+    category: articles for category, articles in category_articles.items() if len(articles) >= 1
+}
 category_articles_filtered.__len__()
 
 categories = list(category_articles_filtered.keys())
@@ -172,21 +169,20 @@ for i, category1 in tqdm(enumerate(categories), total=num_categories):
             category2_articles = category_articles[category2]
 
             jaccard_similarity = calculate_jaccard_similarity(category1_articles, category2_articles)
-c
+
             similarity_matrix[i, j] = jaccard_similarity
             similarity_matrix[j, i] = jaccard_similarity
 
 
 # %%
-np.save('similarity_matrix.npy', similarity_matrix.toarray())
+np.save("similarity_matrix.npy", similarity_matrix.toarray())
 
 
 # %%
-from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.cluster.hierarchy import dendrogram, linkage
 
 # Perform hierarchical clustering
-linkage_matrix = linkage(similarity_matrix, method='complete')
+linkage_matrix = linkage(similarity_matrix, method="complete")
 
 # Generate a dendrogram for visualization
 dendrogram(linkage_matrix, labels=categories)
-

@@ -1,14 +1,16 @@
-from extract import Extractor
 import json
-import re
 import os
+import re
+
 from tqdm import tqdm
+
+from article_cleaning.extract_article.extract import Extractor
 
 CLEANED_ARTICLES_DIR = "cleaned_articles"
 PARSED_ARTICLES_DIR = "parsed_articles"
+
+
 def main():
-
-
     os.chdir("D:/nlp")
     os.makedirs(CLEANED_ARTICLES_DIR, exist_ok=True)
     all_files = os.listdir(PARSED_ARTICLES_DIR)
@@ -16,7 +18,6 @@ def main():
     # Create an extractor object
     extractor = Extractor()
     for file in tqdm(all_files):
-
         with open(os.path.join(PARSED_ARTICLES_DIR, file), "r") as f:
             doc = json.load(f)
 
@@ -25,7 +26,7 @@ def main():
         # print(paragraph_list)
         if len(paragraph_list) == 0:
             continue
-        paragraph_list[0]= re.sub(r'\([^)]*\)', '', paragraph_list[0]).replace("  ", " ")
+        paragraph_list[0] = re.sub(r"\([^)]*\)", "", paragraph_list[0]).replace("  ", " ")
 
         cleaned_article = {
             "title": doc[0],
@@ -37,6 +38,5 @@ def main():
             json.dump(cleaned_article, f, indent=2, ensure_ascii=False)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
