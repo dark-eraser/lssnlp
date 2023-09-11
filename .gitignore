@@ -1,3 +1,7 @@
 # *.ipynb
 .vscode
 __pycache__
+
+outputs/
+models/
+data/embeddings/
