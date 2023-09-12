@@ -3,13 +3,13 @@ import pickle
 import time
 
 import cupy as cp
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from cuml.cluster import HDBSCAN
 from cuml.common.device_selection import set_global_device_type
 from cuml.manifold import UMAP
 from cuml.preprocessing import normalize
-import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
 set_global_device_type("gpu")
@@ -29,27 +29,27 @@ with open("data/categories/categories.pickle", "rb") as f:
     counter = pickle.load(f)
 keys = list(counter.keys())
 
-# embeddings = np.load("embeddings.npy", mmap_mode="r+")
-# logger.info(f"Loaded embeddings with shape {embeddings.shape}")
+embeddings = np.load("embeddings.npy", mmap_mode="r+")
+logger.info(f"Loaded embeddings with shape {embeddings.shape}")
 
-# X = normalize(cp.asarray(embeddings))
-# logger.info(f"Normalized embeddings")
+X = normalize(cp.asarray(embeddings))
+logger.info(f"Normalized embeddings")
 
 
-# umap = UMAP(
-#     n_components=2,
-#     n_neighbors=umap_n_neighbors,
-#     min_dist=umap_min_dist,
-#     spread=umap_spread,
-#     n_epochs=umap_n_epochs,
-#     random_state=umap_random_state,
-#     verbose=5,
-# )
-# reduced_embeddings = umap.fit_transform(X)
-# logger.info(f"Done with UMAP")
+umap = UMAP(
+    n_components=2,
+    n_neighbors=umap_n_neighbors,
+    min_dist=umap_min_dist,
+    spread=umap_spread,
+    n_epochs=umap_n_epochs,
+    random_state=umap_random_state,
+    verbose=5,
+)
+reduced_embeddings = umap.fit_transform(X)
+logger.info(f"Done with UMAP")
 
-# cp.save("reduced_embeddings_2.npy", reduced_embeddings)
-# logger.info(f"Saved reduced embeddings to 'reduced_embeddings.npy'")
+cp.save("reduced_embeddings_2.npy", reduced_embeddings)
+logger.info(f"Saved reduced embeddings to 'reduced_embeddings.npy'")
 
 
 reduced_embeddings = cp.load("reduced_embeddings_2.npy")
